@@ -1,0 +1,12 @@
+{
+  "name": "fuseki-testing-tool",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/luckykiet/fuseki-testing-tool.git",
+  "author": "Tuan Kiet Nguyen <ngntuankiet@gmail.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "npm-check-updates": "^17.1.11"
+  },
+  "packageManager": "yarn@4.5.3"
+}
