@@ -1,55 +1,99 @@
 const FusekiTestTool = require('./fuseki-test-tool');
 const config = require('./config');
+const fs = require('fs');
+const chalk = require('chalk');
+const path = require('path');
 
+const inputFolder = path.join(__dirname, config.inputFolder);
 const fuseki = new FusekiTestTool(config.url);
 
-const datasetName = 'testDataset';
 (async () => {
   try {
+    console.log(chalk.cyan('Starting Fuseki Test Tool...'));
+
     const pingResponse = await fuseki.ping();
-    console.log('Ping Response:', pingResponse);
-
-    const datasetsResponse = await fuseki.listDatasets();
-    if (datasetsResponse.success) {
-      console.log('Datasets:', datasetsResponse.msg.datasets);
-    } else {
-      console.error('Error:', datasetsResponse.msg);
+    if (!pingResponse.success) {
+      console.error(chalk.red('Error: Fuseki server is not reachable'));
+      return;
     }
 
-    const createDatasetResponse = await fuseki.createDataset('testDataset', { type: 'mem' });
-    console.log('Create Dataset:', createDatasetResponse);
+    const files = fs.readdirSync(inputFolder).filter((file) => file.endsWith('.json'));
 
-    const rdfData = `
-      @prefix ex: <http://example.org/> .
-      ex:subject ex:predicate "object" .
-    `;
-    const addDataResponse = await fuseki.addData({ data: rdfData, dataset: datasetName });
-    console.log('Add Data:', addDataResponse);
+    for (const file of files) {
+      console.log(chalk.yellow(`Processing file: ${file}`));
 
-    const query = `
-      PREFIX ex: <http://example.org/>
-      SELECT ?s ?p ?o WHERE {
-        ?s ?p ?o .
+      const filePath = path.join(inputFolder, file);
+      const exampleData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+      const datasetName = exampleData.dataset || 'testDataset';
+
+      try {
+        const datasetsResponse = await fuseki.listDatasets();
+        if (!datasetsResponse.success) {
+          console.error(chalk.red('Error: Failed to list datasets'));
+          continue;
+        }
+
+        const datasets = datasetsResponse.msg.datasets.map((dataset) => dataset["ds.name"]);
+        if (!datasets.includes(datasetName)) {
+          const createDatasetResponse = await fuseki.createDataset(datasetName, { type: 'mem' });
+          if (!createDatasetResponse.success) {
+            console.error(chalk.red(`Error: Failed to create dataset ${datasetName}`));
+            continue;
+          }
+        }
+
+        const rdfData = exampleData.data.map(
+          ({ s: subject, p: predicate, o: object }) =>
+            `<${subject}> <${predicate}> <${object}> .`
+        ).join('\n');
+
+        const addDataResponse = await fuseki.addData({ data: rdfData, dataset: datasetName });
+        if (!addDataResponse.success) {
+          console.error(chalk.red('Error: Failed to add data to dataset'));
+          continue;
+        }
+
+        for (const queryObj of exampleData.queries) {
+          console.log(chalk.blue(`Running query: ${queryObj.name}`));
+          console.log(chalk.gray(`Description: ${queryObj.description}`));
+
+          const sparqlQuery = queryObj.sparql;
+          const expectedResults = queryObj.expected.result?.map((binding) => {
+            const result = {};
+            for (const key in binding) {
+              result[key] = binding[key];
+            }
+            return result;
+          });
+
+          const params = {
+            sparqlQuery,
+            dataset: datasetName,
+            expectedResults: expectedResults || [],
+          }
+
+          if (queryObj.expected.length) {
+            params.expectedLength = queryObj.expected.length;
+          }
+
+          const assertResponse = await fuseki.assertQuery(params);
+
+          if (!assertResponse.success) {
+            console.error(chalk.red('Assertion Failed:'), assertResponse.msg);
+          } else {
+            console.log(chalk.green('Assertion Passed!'));
+          }
+        }
+
+        const deleteDatasetResponse = await fuseki.deleteDataset(datasetName);
+        if (!deleteDatasetResponse.success) {
+          console.error(chalk.red(`Error: Failed to delete dataset ${datasetName}`));
+        }
+      } catch (error) {
+        console.error(chalk.red(`Error processing file ${file}:`), error.message);
       }
-    `;
-
-    const expectedResults = [
-      { s: 'http://example.org/subject', p: 'http://example.org/predicate', o: 'object' },
-    ];
-
-    const assertResponse = await fuseki.assertQuery({ sparqlQuery: query, dataset: datasetName, expectedResults });
-    console.log('Assert Query Response:', assertResponse);
-
-    if (!assertResponse.success) {
-      console.error('Assertion Failed:', assertResponse.msg);
-    } else {
-      console.log('Assertion Passed:', assertResponse.msg);
     }
-
-
-    const deleteDatasetResponse = await fuseki.deleteDataset(datasetName);
-    console.log('Delete Dataset:', deleteDatasetResponse);
   } catch (error) {
-    console.error('Unexpected error:', error.message);
+    console.error(chalk.red('Unexpected error:'), error.message);
   }
 })();

@@ -1,5 +1,6 @@
 const axios = require('axios');
 const qs = require('qs');
+const _ = require('lodash');
 
 class FusekiTestTool {
     constructor(endpoint) {
@@ -122,19 +123,45 @@ class FusekiTestTool {
         return this.handleRequest(() => this.client.delete(url));
     }
 
-    async assertQuery({ sparqlQuery, expectedResults, dataset }) {
+    async assertQuery({ sparqlQuery, expectedResults, expectedLength, dataset }) {
         try {
+            const hasOrderBy = /ORDER BY/i.test(sparqlQuery);
+
             const results = await this.query({ sparqlQuery, dataset });
             if (!results.success) {
                 return results;
             }
 
-            const actualResults = results.msg.results.bindings.map((binding) =>
+            let actualResults = results.msg.results.bindings.map((binding) =>
                 Object.fromEntries(Object.entries(binding).map(([key, value]) => [key, value.value]))
             );
 
-            const isEqual = JSON.stringify(actualResults) === JSON.stringify(expectedResults);
+            if (!hasOrderBy) {
+                const sortLexicographically = (data) => {
+                    if (!Array.isArray(data) || !data.length) {
+                        return [];
+                    }
+                    return _.sortBy(data, Object.keys(data[0]))
+                };
+                expectedResults = sortLexicographically(expectedResults);
+                actualResults = sortLexicographically(actualResults);
+            }
+
+            const isEqual = _.isEqual(actualResults, expectedResults);
             if (!isEqual) {
+                if (!expectedResults.length && expectedLength && !isNaN(expectedLength)) {
+                    if (actualResults.length !== expectedLength) {
+                        return {
+                            success: false,
+                            msg: {
+                                error: 'Assertion Failed',
+                                expectedLength: expectedLength,
+                                actualLength: actualResults.length,
+                            },
+                        };
+                    }
+                    return { success: true, msg: 'Assertion Passed' };
+                }
                 return {
                     success: false,
                     msg: {
@@ -144,6 +171,7 @@ class FusekiTestTool {
                     },
                 };
             }
+
             return { success: true, msg: 'Assertion Passed' };
         } catch (error) {
             return {
