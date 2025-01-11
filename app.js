@@ -1,5 +1,8 @@
 const FusekiTestTool = require('./fuseki-test-tool');
-const fuseki = new FusekiTestTool('http://localhost:3030');
+const config = require('./config');
+
+const fuseki = new FusekiTestTool(config.url);
+
 const datasetName = 'testDataset';
 (async () => {
   try {

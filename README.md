@@ -21,13 +21,17 @@ git clone https://github.com/luckykiet/fuseki-testing-tool.git
 cd fuseki-testing-tool
 yarn install
 ```
-4. Install Fuseki server
+4. Install Fuseki server or use preinstalled fuseki server
 - for Windows follow [this instruction](https://github.com/nvbach91/4IZ441/wiki/Apache-Jena-Fuseki)
 - for MacOS or Linux based OS follow [this instruction](macos/README.md)
 
 ## Usage
 1. Run Fuseki server
-2. Run application
+2. (Optional) Run preinstalled fuseki server
+```
+yarn fuseki
+```
+3. Run application
 ```
 yarn start
 ```
