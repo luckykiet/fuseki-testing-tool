@@ -1,0 +1,113 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Dataset",
+    "type": "object",
+    "properties": {
+        "dataset": {
+            "type": "string",
+            "description": "The name of the dataset."
+        },
+        "description": {
+            "type": "string",
+            "description": "A detailed description of the dataset."
+        },
+        "data": {
+            "oneOf": [
+                {
+                    "type": "array",
+                    "description": "An array of triples with graph information.",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "s": {
+                                "type": "string",
+                                "description": "The subject of the triple.",
+                                "format": "uri"
+                            },
+                            "p": {
+                                "type": "string",
+                                "description": "The predicate of the triple.",
+                                "format": "uri"
+                            },
+                            "o": {
+                                "type": "string",
+                                "description": "The object of the triple.",
+                                "format": "uri"
+                            },
+                            "g": {
+                                "type": "string",
+                                "description": "The graph where the triple is located.",
+                                "format": "uri"
+                            }
+                        },
+                        "required": [
+                            "s",
+                            "p",
+                            "o"
+                        ]
+                    }
+                },
+                {
+                    "type": "string",
+                    "description": "A relative file path to a dataset file containing turtle code."
+                }
+            ]
+        },
+        "queries": {
+            "type": "array",
+            "description": "A set of SPARQL queries to interact with the dataset.",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "The name of the query."
+                    },
+                    "description": {
+                        "type": "string",
+                        "description": "A detailed description of the query."
+                    },
+                    "sparql": {
+                        "type": "string",
+                        "description": "The SPARQL query string or relative path to file containing SPARQL query. Only one query should be in the file."
+                    },
+                    "expected": {
+                        "type": "object",
+                        "description": "The expected result and metadata for the query.",
+                        "properties": {
+                            "result": {
+                                "type": "array",
+                                "description": "The expected result as an array of objects.",
+                                "items": {
+                                    "type": "object",
+                                    "additionalProperties": {
+                                        "type": "string"
+                                    }
+                                }
+                            },
+                            "length": {
+                                "type": "integer",
+                                "description": "The expected number of results."
+                            }
+                        },
+                        "required": [
+                            "result"
+                        ]
+                    }
+                },
+                "required": [
+                    "name",
+                    "description",
+                    "sparql",
+                    "expected"
+                ]
+            }
+        }
+    },
+    "required": [
+        "dataset",
+        "description",
+        "data",
+        "queries"
+    ]
+}

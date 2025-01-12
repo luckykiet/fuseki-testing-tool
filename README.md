@@ -31,7 +31,9 @@ yarn install
 ```
 yarn fuseki
 ```
-3. Run application
+3. Modify [config.js](config.js) if needed
+4. Create testing examples base on [schema.json](schema.json) or prepared in _input_ folder.
+5. Run application
 ```
 yarn start
 ```
