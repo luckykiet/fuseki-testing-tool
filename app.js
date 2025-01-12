@@ -28,6 +28,16 @@ const fuseki = new FusekiTestTool(config.url);
 
     const files = fs.readdirSync(inputFolder).filter((file) => file.endsWith('.json'));
 
+    if (files.length === 0) {
+      console.error(chalk.red('Error: No JSON files found in the input folder'));
+      return;
+    }
+
+    const results = {
+      passed: [],
+      failed: []
+    };
+
     for (const file of files) {
       console.log(chalk.gray(Array(40).fill('-').join('')));
       console.log(chalk.yellow(`Processing file: ${file}`));
@@ -35,7 +45,6 @@ const fuseki = new FusekiTestTool(config.url);
       const filePath = path.join(inputFolder, file);
       let exampleData;
 
-      // Validate JSON file
       try {
         exampleData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
         const isValid = validate(exampleData);
@@ -45,10 +54,12 @@ const fuseki = new FusekiTestTool(config.url);
             chalk.red(`Validation failed for ${file}:`),
             validate.errors.map((err) => `${err.instancePath} ${err.message}`).join(', ')
           );
+          results.failed.push(file);
           continue;
         }
       } catch (error) {
         console.error(chalk.red(`Error reading or validating file ${file}:`), error.message);
+        results.failed.push(file);
         continue;
       }
 
@@ -58,6 +69,7 @@ const fuseki = new FusekiTestTool(config.url);
         const datasetsResponse = await fuseki.listDatasets();
         if (!datasetsResponse.success) {
           console.error(chalk.red('Error: Failed to list datasets', datasetsResponse.msg));
+          results.failed.push(file);
           continue;
         }
 
@@ -67,6 +79,7 @@ const fuseki = new FusekiTestTool(config.url);
           const createDatasetResponse = await fuseki.createDataset(datasetName, { type: 'mem' });
           if (!createDatasetResponse.success) {
             console.error(chalk.red(`Error: Failed to create dataset ${datasetName}`), createDatasetResponse.msg);
+            results.failed.push(file);
             continue;
           }
         }
@@ -81,6 +94,7 @@ const fuseki = new FusekiTestTool(config.url);
             rdfData = parsedData;
           } catch (error) {
             console.error(chalk.red(`Error reading file ${exampleContent}`), error.message);
+            results.failed.push(file);
             continue;
           }
         } else {
@@ -90,8 +104,11 @@ const fuseki = new FusekiTestTool(config.url);
         const addDataResponse = await fuseki.addData({ data: rdfData, dataset: datasetName });
         if (!addDataResponse.success) {
           console.error(chalk.red('Error: Failed to add data to dataset', addDataResponse.msg));
+          results.failed.push(file);
           continue;
         }
+
+        let allQueriesPassed = true;
 
         for (const queryObj of exampleData.queries) {
           console.log(chalk.blue(`Running query: ${queryObj.name}`));
@@ -109,18 +126,20 @@ const fuseki = new FusekiTestTool(config.url);
             sparqlQuery = queryObj.sparql;
           }
 
-          const expectedResults = queryObj.expected.result?.map((binding) => {
-            const result = {};
-            for (const key in binding) {
-              result[key] = binding[key];
-            }
-            return result;
-          });
+          const expectedResults = Array.isArray(queryObj.expected.result)
+            ? queryObj.expected.result.map((binding) => {
+              const result = {};
+              for (const key in binding) {
+                result[key] = binding[key];
+              }
+              return result;
+            })
+            : typeof queryObj.expected.result === 'boolean' ? queryObj.expected.result : queryObj.expected.result || "";
 
           const params = {
             sparqlQuery,
             dataset: datasetName,
-            expectedResults: expectedResults || [],
+            expectedResults: expectedResults,
           };
 
           if (queryObj.expected.length) {
@@ -130,7 +149,9 @@ const fuseki = new FusekiTestTool(config.url);
           const assertResponse = await fuseki.assertQuery(params);
 
           if (!assertResponse.success) {
-            console.error(chalk.red('Assertion Failed:'), assertResponse.msg);
+            console.error(chalk.red('Assertion Failed:'));
+            console.dir(assertResponse.msg, { depth: null });
+            allQueriesPassed = false;
           } else {
             console.log(chalk.green('Assertion Passed!'));
           }
@@ -143,13 +164,30 @@ const fuseki = new FusekiTestTool(config.url);
         if (!deleteDatasetResponse.success) {
           console.error(chalk.red(`Error: Failed to delete dataset ${datasetName}`), deleteDatasetResponse.msg);
         }
+
+        if (allQueriesPassed) {
+          results.passed.push(file);
+        } else {
+          results.failed.push(file);
+        }
       } catch (error) {
         console.error(chalk.red(`Error processing file ${file}:`), error.message);
+        results.failed.push(file);
       }
       console.log(chalk.gray(Array(40).fill('-').join('')));
       if (file !== files[files.length - 1]) {
         console.log('\n\n');
       }
+    }
+
+    console.log(chalk.cyan('\nSummary:'));
+    console.log(chalk.green(`Passed files: ${results.passed.length}`));
+    console.log(results.passed);
+    if (results.failed.length > 0) {
+      console.log(chalk.red(`Failed files: ${results.failed.length}`));
+      console.log(results.failed);
+    } else {
+      console.log(chalk.green('All files passed!'));
     }
   } catch (error) {
     console.error(chalk.red('Unexpected error:'), error.message);

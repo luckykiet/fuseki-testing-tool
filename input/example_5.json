@@ -1,0 +1,182 @@
+{
+    "dataset": "otherOperatorsDataset",
+    "description": "This is a SPARQL example demonstrating Insert, Construct, Delete, and verification queries.",
+    "data": "example_5/data.ttl",
+    "queries": [
+        {
+            "name": "Select before Insert 1",
+            "description": "Verify the triple for Insert 1 not exists.",
+            "sparql": "SELECT ?s ?p ?o WHERE { ?s ?p ?o FILTER(?s = <http://example.org/subject4> && ?p = <http://example.org/predicate4> && ?o = <http://example.org/object5>) }",
+            "expected": {
+                "result": [],
+                "length": 0
+            }
+        },
+        {
+            "name": "Insert 1",
+            "description": "Insert a new triple where the subject is 'http://example.org/subject4', predicate is 'http://example.org/predicate4', and object is 'http://example.org/object5'.",
+            "sparql": "INSERT DATA { <http://example.org/subject4> <http://example.org/predicate4> <http://example.org/object5> }",
+            "expected": {
+                "result": "Update succeeded\n"
+            }
+        },
+        {
+            "name": "Select after Insert 1",
+            "description": "Verify the inserted triple for Insert 1.",
+            "sparql": "SELECT ?s ?p ?o WHERE { ?s ?p ?o FILTER(?s = <http://example.org/subject4> && ?p = <http://example.org/predicate4> && ?o = <http://example.org/object5>) }",
+            "expected": {
+                "result": [
+                    {
+                        "s": "http://example.org/subject4",
+                        "p": "http://example.org/predicate4",
+                        "o": "http://example.org/object5"
+                    }
+                ],
+                "length": 1
+            }
+        },
+        {
+            "name": "Select before Delete 1",
+            "description": "Verify that triples with predicate 'http://example.org/predicate3' is exist.",
+            "sparql": "SELECT ?s ?p ?o WHERE { ?s <http://example.org/predicate3> ?o }",
+            "expected": {
+                "result": [
+                    {
+                        "s": "http://example.org/subject2",
+                        "o": "http://example.org/object4"
+                    }
+                ],
+                "length": 1
+            }
+        },
+        {
+            "name": "Delete 1",
+            "description": "Delete triples where the predicate is 'http://example.org/predicate3'.",
+            "sparql": "DELETE WHERE { ?s <http://example.org/predicate3> ?o }",
+            "expected": {
+                "result": "Update succeeded\n"
+            }
+        },
+        {
+            "name": "Select after Delete 1",
+            "description": "Verify that triples with predicate 'http://example.org/predicate3' have been deleted.",
+            "sparql": "SELECT ?s ?p ?o WHERE { ?s <http://example.org/predicate3> ?o }",
+            "expected": {
+                "result": [],
+                "length": 0
+            }
+        },
+        {
+            "name": "Select before Delete 2",
+            "description": "Check the current graph before deleting triples with object 'http://example.org/object1'.",
+            "sparql": "SELECT ?s WHERE { ?s ?p <http://example.org/object1> }",
+            "expected": {
+                "result": [
+                    {
+                        "s": "http://example.org/subject1"
+                    },
+                    {
+                        "s": "http://example.org/subject3"
+                    }
+                ],
+                "length": 2
+            }
+        },
+        {
+            "name": "Delete 2",
+            "description": "Delete all triples where the object is 'http://example.org/object1'.",
+            "sparql": "DELETE WHERE { ?s ?p <http://example.org/object1> }",
+            "expected": {
+                "result": "Update succeeded\n"
+            }
+        },
+        {
+            "name": "Select after Delete 2",
+            "description": "Verify that triples with object 'http://example.org/object1' have been deleted.",
+            "sparql": "SELECT ?s ?p ?o WHERE { ?s ?p <http://example.org/object1> }",
+            "expected": {
+                "result": [],
+                "length": 0
+            }
+        },
+        {
+            "name": "Select before Construct 1",
+            "description": "Check the current graph before constructing a new graph.",
+            "sparql": "SELECT ?s ?p WHERE { ?s ?p [] . }",
+            "expected": {
+                "result": [
+                    {
+                        "s": "http://example.org/subject1",
+                        "p": "http://example.org/predicate2"
+                    },
+                    {
+                        "s": "http://example.org/subject2",
+                        "p": "http://example.org/predicate1"
+                    },
+                    {
+                        "s": "http://example.org/subject3",
+                        "p": "http://example.org/predicate2"
+                    },
+                    {
+                        "s": "http://example.org/subject4",
+                        "p": "http://example.org/predicate4"
+                    }
+                ],
+                "length": 4
+            }
+        },
+        {
+            "name": "Construct 1",
+            "description": "Construct a new graph where all subjects `<http://example.org/subject1>` and `<http://example.org/subject2>` are transformed with `newPredicate` and new type `newType`.",
+            "sparql": "CONSTRUCT { ?s a <http://example.org/newType> ; <http://example.org/newPredicate> ?o } { ?s ?p ?o FILTER(?s = <http://example.org/subject1> || ?s = <http://example.org/subject2>) }",
+            "expected": {
+                "result": [
+                    {
+                        "s": "http://example.org/subject1",
+                        "p": "http://example.org/newPredicate",
+                        "o": "http://example.org/object2"
+                    },
+                    {
+                        "s": "http://example.org/subject1",
+                        "p": "rdf:type",
+                        "o": "http://example.org/newType"
+                    },
+                    {
+                        "s": "http://example.org/subject2",
+                        "p": "http://example.org/newPredicate",
+                        "o": "http://example.org/object3"
+                    },
+                    {
+                        "s": "http://example.org/subject2",
+                        "p": "rdf:type",
+                        "o": "http://example.org/newType"
+                    }
+                ],
+                "length": 4
+            }
+        },
+        {
+            "name": "Update 1",
+            "description": "Update the object of all triples where the subject is 'http://example.org/subject3' to 'http://example.org/updatedObject'.",
+            "sparql": "DELETE { <http://example.org/subject3> ?p ?o } INSERT { <http://example.org/subject3> ?p <http://example.org/updatedObject> } WHERE { <http://example.org/subject3> ?p ?o }",
+            "expected": {
+                "result": "Update succeeded\n"
+            }
+        },
+        {
+            "name": "Select after Update 1",
+            "description": "Verify that the object for subject 'http://example.org/subject3' has been updated.",
+            "sparql": "SELECT ?s ?p ?o WHERE { ?s ?p ?o FILTER(?s = <http://example.org/subject3> && ?o = <http://example.org/updatedObject>) }",
+            "expected": {
+                "result": [
+                    {
+                        "s": "http://example.org/subject3",
+                        "p": "http://example.org/predicate2",
+                        "o": "http://example.org/updatedObject"
+                    }
+                ],
+                "length": 1
+            }
+        }
+    ]
+}

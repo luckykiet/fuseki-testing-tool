@@ -1,52 +1,21 @@
 {
     "dataset": "complexDataset",
     "description": "This is a more complex SPARQL example",
-    "data": [
-        {
-            "s": "http://example.org/subject1",
-            "p": "http://example.org/predicate1",
-            "o": "http://example.org/object1"
-        },
-        {
-            "s": "http://example.org/subject1",
-            "p": "http://example.org/predicate2",
-            "o": "http://example.org/object2"
-        },
-        {
-            "s": "http://example.org/subject2",
-            "p": "http://example.org/predicate1",
-            "o": "http://example.org/object3"
-        },
-        {
-            "s": "http://example.org/subject2",
-            "p": "http://example.org/predicate3",
-            "o": "http://example.org/object4"
-        },
-        {
-            "s": "http://example.org/subject3",
-            "p": "http://example.org/predicate1",
-            "o": "http://example.org/object1"
-        },
-        {
-            "s": "http://example.org/subject3",
-            "p": "http://example.org/predicate2",
-            "o": "http://example.org/object3"
-        }
-    ],
+    "data": "example_2/data.ttl",
     "queries": [
         {
             "name": "Query 1",
-            "description": "Select all triples where the object is 'http://example.org/object3'.",
+            "description": "Select all subjects and predicates where the object is 'http://example.org/object3'. Order is not guaranteed.",
             "sparql": "SELECT ?s ?p WHERE { ?s ?p <http://example.org/object3> }",
             "expected": {
                 "result": [
                     {
-                        "s": "http://example.org/subject2",
-                        "p": "http://example.org/predicate1"
-                    },
-                    {
                         "s": "http://example.org/subject3",
                         "p": "http://example.org/predicate2"
+                    },
+                    {
+                        "s": "http://example.org/subject2",
+                        "p": "http://example.org/predicate1"
                     }
                 ],
                 "length": 2
@@ -55,19 +24,19 @@
         {
             "name": "Query 2",
             "description": "Select subjects with a count of distinct predicates used, ordered by count descending.",
-            "sparql": "SELECT ?s (COUNT(DISTINCT ?p) AS ?predicateCount) WHERE { ?s ?p ?o } GROUP BY ?s ORDER BY DESC(?predicateCount)",
+            "sparql": "SELECT ?s ( COUNT(DISTINCT ?p) AS ?predicateCount ) WHERE { ?s ?p ?o } GROUP BY ?s ORDER BY DESC(?predicateCount)",
             "expected": {
                 "result": [
+                    {
+                        "s": "http://example.org/subject3",
+                        "predicateCount": "3"
+                    },
                     {
                         "s": "http://example.org/subject1",
                         "predicateCount": "2"
                     },
                     {
                         "s": "http://example.org/subject2",
-                        "predicateCount": "2"
-                    },
-                    {
-                        "s": "http://example.org/subject3",
                         "predicateCount": "2"
                     }
                 ],
@@ -76,36 +45,44 @@
         },
         {
             "name": "Query 3",
-            "description": "Select all subjects and objects, ordered by subject and object lexicographically.",
-            "sparql": "SELECT ?s ?o WHERE { ?s ?p ?o } ORDER BY ?s ?o",
+            "description": "Select all subjects and objects, ordered by subject ascending and object descending.",
+            "sparql": "SELECT ?s ?o WHERE { ?s ?p ?o } ORDER BY ASC(?s) DESC(?o)",
             "expected": {
                 "result": [
-                    {
-                        "s": "http://example.org/subject1",
-                        "o": "http://example.org/object1"
-                    },
                     {
                         "s": "http://example.org/subject1",
                         "o": "http://example.org/object2"
                     },
                     {
-                        "s": "http://example.org/subject2",
-                        "o": "http://example.org/object3"
+                        "s": "http://example.org/subject1",
+                        "o": "http://example.org/object1"
                     },
                     {
                         "s": "http://example.org/subject2",
                         "o": "http://example.org/object4"
                     },
                     {
+                        "s": "http://example.org/subject2",
+                        "o": "http://example.org/object3"
+                    },
+                    {
+                        "s": "http://example.org/subject2",
+                        "o": "http://example.org/object2"
+                    },
+                    {
                         "s": "http://example.org/subject3",
-                        "o": "http://example.org/object1"
+                        "o": "http://example.org/object5"
                     },
                     {
                         "s": "http://example.org/subject3",
                         "o": "http://example.org/object3"
+                    },
+                    {
+                        "s": "http://example.org/subject3",
+                        "o": "http://example.org/object1"
                     }
                 ],
-                "length": 6
+                "length": 8
             }
         },
         {
@@ -114,6 +91,11 @@
             "sparql": "SELECT ?s ?p ?o WHERE { ?s ?p ?o FILTER(?p != <http://example.org/predicate1>) } ORDER BY DESC(?o)",
             "expected": {
                 "result": [
+                    {
+                        "s": "http://example.org/subject3",
+                        "p": "http://example.org/predicate4",
+                        "o": "http://example.org/object5"
+                    },
                     {
                         "s": "http://example.org/subject2",
                         "p": "http://example.org/predicate3",
@@ -130,12 +112,12 @@
                         "o": "http://example.org/object2"
                     }
                 ],
-                "length": 3
+                "length": 4
             }
         },
         {
             "name": "Query 5",
-            "description": "Select all unique predicates used across the dataset.",
+            "description": "Select all unique predicates used across the dataset. Order is not guaranteed.",
             "sparql": "SELECT DISTINCT ?p WHERE { ?s ?p ?o }",
             "expected": {
                 "result": [
@@ -146,10 +128,13 @@
                         "p": "http://example.org/predicate2"
                     },
                     {
+                        "p": "http://example.org/predicate4"
+                    },
+                    {
                         "p": "http://example.org/predicate3"
                     }
                 ],
-                "length": 3
+                "length": 4
             }
         }
     ]

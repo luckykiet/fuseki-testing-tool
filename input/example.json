@@ -46,7 +46,7 @@
         },
         {
             "name": "Query 2",
-            "description": "Select all triples sorted by subject.",
+            "description": "Select all triples sorted by subject ascending.",
             "sparql": "SELECT ?s ?p ?o WHERE { ?s ?p ?o } ORDER BY ?s",
             "expected": {
                 "result": [
@@ -109,8 +109,7 @@
                         "p": "http://example.org/predicate2",
                         "o": "http://example.org/object2"
                     }
-                ],
-                "length": 2
+                ]
             }
         },
         {

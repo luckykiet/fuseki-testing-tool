@@ -94,7 +94,7 @@
         },
         {
             "name": "Query 4",
-            "description": "Select all triples from graph1 and graph3 where the object is 'http://example.org/object1'.",
+            "description": "Select all triples from graph1 and graph3 where the object is 'http://example.org/object1'. Load sparql from file",
             "sparql": "example_4/sparql_4.ttl",
             "expected": {
                 "result": [
