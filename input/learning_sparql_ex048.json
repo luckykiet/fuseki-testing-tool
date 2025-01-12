@@ -1,0 +1,32 @@
+{
+    "dataset": "learning_sparql",
+    "description": "This dataset is used to test the queries in the learning sparql book. Data is directly taken from the dbpedia.",
+    "data": [],
+    "service": "http://dbpedia.org/sparql",
+    "queries": [
+        {
+            "name": "ex048 - 1",
+            "description": "File ex048.ttl",
+            "sparql": "learning_sparql/sparql/ex048-1.rq",
+            "expected": {
+                "length": 100
+            }
+        },
+        {
+            "name": "ex048 - 2",
+            "description": "File ex048.ttl",
+            "sparql": "learning_sparql/sparql/ex048-2.rq",
+            "expected": {
+                "length": 200
+            }
+        },
+        {
+            "name": "ex048 - 3",
+            "description": "File ex048.ttl",
+            "sparql": "learning_sparql/sparql/ex048-3.rq",
+            "expected": {
+                "length": 150
+            }
+        }
+    ]
+}

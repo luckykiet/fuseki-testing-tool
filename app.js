@@ -4,6 +4,14 @@ const fs = require('fs');
 const chalk = require('chalk');
 const path = require('path');
 const parser = require('./parser');
+const Ajv = require('ajv');
+const addFormats = require('ajv-formats');
+
+const schema = JSON.parse(fs.readFileSync(path.join(__dirname, 'schema.json'), 'utf8'));
+
+const ajv = new Ajv();
+addFormats(ajv);
+const validate = ajv.compile(schema);
 
 const inputFolder = path.join(__dirname, config.inputFolder);
 const fuseki = new FusekiTestTool(config.url);
@@ -25,7 +33,25 @@ const fuseki = new FusekiTestTool(config.url);
       console.log(chalk.yellow(`Processing file: ${file}`));
 
       const filePath = path.join(inputFolder, file);
-      const exampleData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+      let exampleData;
+
+      // Validate JSON file
+      try {
+        exampleData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+        const isValid = validate(exampleData);
+
+        if (!isValid) {
+          console.error(
+            chalk.red(`Validation failed for ${file}:`),
+            validate.errors.map((err) => `${err.instancePath} ${err.message}`).join(', ')
+          );
+          continue;
+        }
+      } catch (error) {
+        console.error(chalk.red(`Error reading or validating file ${file}:`), error.message);
+        continue;
+      }
+
       const datasetName = exampleData.dataset || 'testDataset';
 
       try {
@@ -35,7 +61,7 @@ const fuseki = new FusekiTestTool(config.url);
           continue;
         }
 
-        const datasets = datasetsResponse.msg.datasets.map((dataset) => dataset["ds.name"]);
+        const datasets = datasetsResponse.msg.datasets.map((dataset) => dataset['ds.name']);
 
         if (!datasets.includes(`/${datasetName}`)) {
           const createDatasetResponse = await fuseki.createDataset(datasetName, { type: 'mem' });
@@ -58,8 +84,9 @@ const fuseki = new FusekiTestTool(config.url);
             continue;
           }
         } else {
-          rdfData = exampleContent
+          rdfData = exampleContent;
         }
+
         const addDataResponse = await fuseki.addData({ data: rdfData, dataset: datasetName });
         if (!addDataResponse.success) {
           console.error(chalk.red('Error: Failed to add data to dataset', addDataResponse.msg));
@@ -69,6 +96,7 @@ const fuseki = new FusekiTestTool(config.url);
         for (const queryObj of exampleData.queries) {
           console.log(chalk.blue(`Running query: ${queryObj.name}`));
           console.log(chalk.gray(`Description: ${queryObj.description}`));
+
           let sparqlQuery = '';
           if (typeof queryObj.sparql === 'string') {
             try {
@@ -93,7 +121,7 @@ const fuseki = new FusekiTestTool(config.url);
             sparqlQuery,
             dataset: datasetName,
             expectedResults: expectedResults || [],
-          }
+          };
 
           if (queryObj.expected.length) {
             params.expectedLength = queryObj.expected.length;
