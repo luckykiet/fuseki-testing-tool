@@ -48,23 +48,25 @@
             "name": "Query 2",
             "description": "Select all triples sorted by subject.",
             "sparql": "SELECT ?s ?p ?o WHERE { ?s ?p ?o } ORDER BY ?s",
-            "expected": [
-                {
-                    "s": "http://example.org/subject1",
-                    "p": "http://example.org/predicate1",
-                    "o": "http://example.org/object1"
-                },
-                {
-                    "s": "http://example.org/subject2",
-                    "p": "http://example.org/predicate2",
-                    "o": "http://example.org/object2"
-                },
-                {
-                    "s": "http://example.org/subject3",
-                    "p": "http://example.org/predicate3",
-                    "o": "http://example.org/object3"
-                }
-            ]
+            "expected": {
+                "result": [
+                    {
+                        "s": "http://example.org/subject1",
+                        "p": "http://example.org/predicate1",
+                        "o": "http://example.org/object1"
+                    },
+                    {
+                        "s": "http://example.org/subject2",
+                        "p": "http://example.org/predicate2",
+                        "o": "http://example.org/object2"
+                    },
+                    {
+                        "s": "http://example.org/subject3",
+                        "p": "http://example.org/predicate3",
+                        "o": "http://example.org/object3"
+                    }
+                ]
+            }
         },
         {
             "name": "Query 3",
