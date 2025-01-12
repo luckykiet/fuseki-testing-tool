@@ -1,0 +1,8 @@
+PREFIX ex: <http://example.org/>
+
+SELECT ?s ?p
+WHERE {
+    { GRAPH ex:graph1 { ?s ?p ex:object1 } }
+    UNION
+    { GRAPH ex:graph3 { ?s ?p ex:object1 } }
+}

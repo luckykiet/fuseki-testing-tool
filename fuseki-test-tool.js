@@ -1,6 +1,7 @@
 const axios = require('axios');
 const qs = require('qs');
 const _ = require('lodash');
+const { convertToTurtleWithNoPrefixes } = require('./parser');
 
 class FusekiTestTool {
     constructor(endpoint) {
@@ -98,13 +99,56 @@ class FusekiTestTool {
         return this.handleRequest(() => this.client.get(`/$/tasks/${taskName}`));
     }
 
-    async addData({ data, dataset, graphUri = null, contentType = 'text/turtle' }) {
-        const url = `/${dataset}/data${graphUri ? `?graph=${encodeURIComponent(graphUri)}` : ''}`;
-        return this.handleRequest(() =>
-            this.client.post(url, data, {
-                headers: { 'Content-Type': contentType },
-            })
-        );
+    async addData({ data, dataset, contentType = 'text/turtle' }) {
+        if (!Array.isArray(data)) {
+            return { success: false, msg: 'Data should be an array' };
+        }
+
+        const graphData = {};
+        const undefinedGraphData = [];
+        
+        data.forEach((quad) => {
+            if (quad.g) {
+                if (!graphData[quad.g]) {
+                    graphData[quad.g] = [];
+                }
+                graphData[quad.g].push(quad);
+            } else {
+                undefinedGraphData.push(quad);
+            }
+        });
+
+        const allGraphData = [
+            ...Object.entries(graphData),
+            [null, undefinedGraphData]
+        ];
+
+        const errors = [];
+
+        for (const [graph, quads] of allGraphData) {
+            if (quads.length === 0) continue;
+            const url = `/${dataset}/data${graph ? `?graph=${encodeURIComponent(graph)}` : ''}`;
+            const body = convertToTurtleWithNoPrefixes(quads);
+            try {
+                const response = await this.handleRequest(() =>
+                    this.client.post(url, body, {
+                        headers: { 'Content-Type': contentType },
+                    })
+                );
+
+                if (!response.success) {
+                    errors.push(`Graph: ${graph || 'default'} - ${response.msg}`);
+                }
+            } catch (err) {
+                errors.push(`Graph: ${graph || 'default'} - ${err.message}`);
+            }
+        }
+
+        if (errors.length > 0) {
+            return { success: false, msg: errors };
+        }
+
+        return { success: true, msg: 'Data added successfully' };
     }
 
     async query({ sparqlQuery, dataset, queryType = 'select' }) {

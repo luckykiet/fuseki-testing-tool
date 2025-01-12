@@ -3,6 +3,7 @@ const config = require('./config');
 const fs = require('fs');
 const chalk = require('chalk');
 const path = require('path');
+const parser = require('./parser');
 
 const inputFolder = path.join(__dirname, config.inputFolder);
 const fuseki = new FusekiTestTool(config.url);
@@ -20,6 +21,7 @@ const fuseki = new FusekiTestTool(config.url);
     const files = fs.readdirSync(inputFolder).filter((file) => file.endsWith('.json'));
 
     for (const file of files) {
+      console.log(chalk.gray(Array(40).fill('-').join('')));
       console.log(chalk.yellow(`Processing file: ${file}`));
 
       const filePath = path.join(inputFolder, file);
@@ -29,35 +31,56 @@ const fuseki = new FusekiTestTool(config.url);
       try {
         const datasetsResponse = await fuseki.listDatasets();
         if (!datasetsResponse.success) {
-          console.error(chalk.red('Error: Failed to list datasets'));
+          console.error(chalk.red('Error: Failed to list datasets', datasetsResponse.msg));
           continue;
         }
 
         const datasets = datasetsResponse.msg.datasets.map((dataset) => dataset["ds.name"]);
-        if (!datasets.includes(datasetName)) {
+
+        if (!datasets.includes(`/${datasetName}`)) {
           const createDatasetResponse = await fuseki.createDataset(datasetName, { type: 'mem' });
           if (!createDatasetResponse.success) {
-            console.error(chalk.red(`Error: Failed to create dataset ${datasetName}`));
+            console.error(chalk.red(`Error: Failed to create dataset ${datasetName}`), createDatasetResponse.msg);
             continue;
           }
         }
 
-        const rdfData = exampleData.data.map(
-          ({ s: subject, p: predicate, o: object }) =>
-            `<${subject}> <${predicate}> <${object}> .`
-        ).join('\n');
-
+        let rdfData = [];
+        const exampleContent = exampleData.data;
+        if (typeof exampleContent === 'string') {
+          try {
+            const dataFilePath = path.join(inputFolder, exampleContent);
+            const turtle = fs.readFileSync(dataFilePath, 'utf8');
+            const parsedData = parser.parseTurtle(turtle);
+            rdfData = parsedData;
+          } catch (error) {
+            console.error(chalk.red(`Error reading file ${exampleContent}`), error.message);
+            continue;
+          }
+        } else {
+          rdfData = exampleContent
+        }
         const addDataResponse = await fuseki.addData({ data: rdfData, dataset: datasetName });
         if (!addDataResponse.success) {
-          console.error(chalk.red('Error: Failed to add data to dataset'));
+          console.error(chalk.red('Error: Failed to add data to dataset', addDataResponse.msg));
           continue;
         }
 
         for (const queryObj of exampleData.queries) {
           console.log(chalk.blue(`Running query: ${queryObj.name}`));
           console.log(chalk.gray(`Description: ${queryObj.description}`));
+          let sparqlQuery = '';
+          if (typeof queryObj.sparql === 'string') {
+            try {
+              const dataFilePath = path.join(inputFolder, queryObj.sparql);
+              sparqlQuery = fs.readFileSync(dataFilePath, 'utf8');
+            } catch (error) {
+              sparqlQuery = queryObj.sparql;
+            }
+          } else {
+            sparqlQuery = queryObj.sparql;
+          }
 
-          const sparqlQuery = queryObj.sparql;
           const expectedResults = queryObj.expected.result?.map((binding) => {
             const result = {};
             for (const key in binding) {
@@ -83,14 +106,21 @@ const fuseki = new FusekiTestTool(config.url);
           } else {
             console.log(chalk.green('Assertion Passed!'));
           }
+          if (queryObj !== exampleData.queries[exampleData.queries.length - 1]) {
+            console.log(chalk.magenta(Array(30).fill('-').join('')));
+          }
         }
 
         const deleteDatasetResponse = await fuseki.deleteDataset(datasetName);
         if (!deleteDatasetResponse.success) {
-          console.error(chalk.red(`Error: Failed to delete dataset ${datasetName}`));
+          console.error(chalk.red(`Error: Failed to delete dataset ${datasetName}`), deleteDatasetResponse.msg);
         }
       } catch (error) {
         console.error(chalk.red(`Error processing file ${file}:`), error.message);
+      }
+      console.log(chalk.gray(Array(40).fill('-').join('')));
+      if (file !== files[files.length - 1]) {
+        console.log('\n\n');
       }
     }
   } catch (error) {

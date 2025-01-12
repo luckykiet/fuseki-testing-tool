@@ -1,0 +1,136 @@
+{
+    "dataset": "multiGraphDataset",
+    "description": "This dataset includes graph information directly in each triple using the 'g' field.",
+    "data": [
+        {
+            "s": "http://example.org/subject1",
+            "p": "http://example.org/predicate1",
+            "o": "http://example.org/object1",
+            "g": "http://example.org/graph1"
+        },
+        {
+            "s": "http://example.org/subject1",
+            "p": "http://example.org/predicate2",
+            "o": "http://example.org/object2",
+            "g": "http://example.org/graph1"
+        },
+        {
+            "s": "http://example.org/subject2",
+            "p": "http://example.org/predicate1",
+            "o": "http://example.org/object3",
+            "g": "http://example.org/graph2"
+        },
+        {
+            "s": "http://example.org/subject2",
+            "p": "http://example.org/predicate3",
+            "o": "http://example.org/object4",
+            "g": "http://example.org/graph2"
+        },
+        {
+            "s": "http://example.org/subject3",
+            "p": "http://example.org/predicate1",
+            "o": "http://example.org/object1",
+            "g": "http://example.org/graph3"
+        },
+        {
+            "s": "http://example.org/subject3",
+            "p": "http://example.org/predicate2",
+            "o": "http://example.org/object3",
+            "g": "http://example.org/graph3"
+        }
+    ],
+    "queries": [
+        {
+            "name": "Query 1",
+            "description": "Select all triples from graph1.",
+            "sparql": "SELECT ?s ?p ?o WHERE { GRAPH <http://example.org/graph1> { ?s ?p ?o } }",
+            "expected": {
+                "result": [
+                    {
+                        "s": "http://example.org/subject1",
+                        "p": "http://example.org/predicate1",
+                        "o": "http://example.org/object1"
+                    },
+                    {
+                        "s": "http://example.org/subject1",
+                        "p": "http://example.org/predicate2",
+                        "o": "http://example.org/object2"
+                    }
+                ],
+                "length": 2
+            }
+        },
+        {
+            "name": "Query 2",
+            "description": "Select all unique subjects across all graphs.",
+            "sparql": "SELECT DISTINCT ?s WHERE { GRAPH ?g { ?s ?p ?o } }",
+            "expected": {
+                "result": [
+                    {
+                        "s": "http://example.org/subject1"
+                    },
+                    {
+                        "s": "http://example.org/subject2"
+                    },
+                    {
+                        "s": "http://example.org/subject3"
+                    }
+                ],
+                "length": 3
+            }
+        },
+        {
+            "name": "Query 3",
+            "description": "Select all objects from graph2 where the predicate is 'http://example.org/predicate1'.",
+            "sparql": "SELECT ?o WHERE { GRAPH <http://example.org/graph2> { ?s <http://example.org/predicate1> ?o } }",
+            "expected": {
+                "result": [
+                    {
+                        "o": "http://example.org/object3"
+                    }
+                ],
+                "length": 1
+            }
+        },
+        {
+            "name": "Query 4",
+            "description": "Select all triples from graph1 and graph3 where the object is 'http://example.org/object1'.",
+            "sparql": "example_4/sparql_4.ttl",
+            "expected": {
+                "result": [
+                    {
+                        "s": "http://example.org/subject1",
+                        "p": "http://example.org/predicate1"
+                    },
+                    {
+                        "s": "http://example.org/subject3",
+                        "p": "http://example.org/predicate1"
+                    }
+                ],
+                "length": 2
+            }
+        },
+        {
+            "name": "Query 5",
+            "description": "Count the number of triples in each graph.",
+            "sparql": "SELECT ?g (COUNT(*) AS ?tripleCount) WHERE { GRAPH ?g { ?s ?p ?o } } GROUP BY ?g",
+            "expected": {
+                "result": [
+                    {
+                        "g": "http://example.org/graph1",
+                        "tripleCount": "2"
+                    },
+                    {
+                        "g": "http://example.org/graph2",
+                        "tripleCount": "2"
+                    },
+                    {
+                        "g": "http://example.org/graph3",
+                        "tripleCount": "2"
+                    }
+                ],
+                "length": 3
+            }
+        }
+    ]
+}
