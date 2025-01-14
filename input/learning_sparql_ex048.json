@@ -2,7 +2,6 @@
     "dataset": "learning_sparql",
     "description": "This dataset is used to test the queries in the learning sparql book. Data is directly taken from the dbpedia.",
     "data": [],
-    "service": "http://dbpedia.org/sparql",
     "queries": [
         {
             "name": "ex048 - 1",
