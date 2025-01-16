@@ -1,0 +1,47 @@
+{
+    "dataset": "runFromFileExample",
+    "description": "Run from turtle file example",
+    "data": "runFromFileExample/data.ttl",
+    "queries": [
+        {
+            "name": "Select before Insert 1",
+            "description": "Verify the triple for Insert 1 not exists.",
+            "sparql": "runFromFileExample/sparql.rq",
+            "expected": {
+                "result": [],
+                "length": 0
+            }
+        },
+        {
+            "name": "Insert 1",
+            "description": "Insert a new triple where the subject is 'http://example.org/subject4', predicate is 'http://example.org/predicate4', and object is 'http://example.org/object5'.",
+            "sparql": "INSERT DATA { <http://example.org/subject4> <http://example.org/predicate4> <http://example.org/object5> }",
+            "expected": {
+                "result": "Update succeeded\n"
+            }
+        },
+        {
+            "name": "Select after Insert 1",
+            "description": "Verify the inserted triple for Insert 1 using same SELECT command.",
+            "sparql": "runFromFileExample/sparql.rq",
+            "expected": {
+                "result": [
+                    {
+                        "s": "http://example.org/subject4",
+                        "p": "http://example.org/predicate4",
+                        "o": "http://example.org/object5"
+                    }
+                ],
+                "length": 1
+            }
+        },
+        {
+            "name": "Select total items after Insert 1",
+            "description": "Compare the total number of triples after Insert 1.",
+            "sparql": "SELECT ?subject ?p ?o WHERE { ?subject ?p ?o }",
+            "expected": {
+                "length": 7
+            }
+        }
+    ]
+}

@@ -37,3 +37,45 @@ yarn fuseki
 ```
 yarn start
 ```
+
+## Outputs
+
+If the test passed, user will receive a message in command line:
+```
+Running query: Query name
+Description: This will run a query as an example.
+Assertion Passed!
+```
+
+If some test fails, the user will receive a message:
+
+- as a string – for bad turtle or SPARQL code or file does not exist or a system error
+```
+Running query: Query name
+Description: This will run a query as an example.
+Assertion Failed:
+Error message here
+```
+- as an object – for the assertion
+```
+Running query: Query name
+Description: This will run a query as an example.
+Assertion Failed:
+{
+  error: 'Assertion Failed',
+  expected: [
+    {
+      s: 'http://example.org/subject4',
+      p: 'http://example.org/predicate3',
+      o: 'http://example.org/object5'
+    }
+  ],
+  actual: [
+    {
+      s: 'http://example.org/subject1',
+      p: 'http://example.org/predicate2',
+      o: 'http://example.org/object3'
+    }
+  ]
+}
+```
